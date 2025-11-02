@@ -1,0 +1,18 @@
+# Note: instead of creating 5 seperate persistent volumes,
+# use a single PVC and subpath mounts.
+{{- if .Values.app.persistence.enabled}}
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: {{ include "hortusfox.fullname" . }}-app-data
+spec:
+  accessModes:
+    - ReadWriteOnce
+  {{- if .Values.app.persistence.storageClassName }}
+  storageClassName: {{ .Values.app.persistence.storageClassName }}
+  {{- end }}
+  resources:
+    requests:
+      storage:
+        {{ .Values.app.persistence.size }}
+{{- end }}

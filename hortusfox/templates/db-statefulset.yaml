@@ -1,0 +1,60 @@
+# hortusfox/templates/db-statefulset.yaml
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: {{ include "hortusfox.fullname" . }}-db
+  labels:
+    {{- include "hortusfox.labels" . | nindent 4 }}
+    app.kubernetes.io/component: db
+spec:
+  serviceName: {{ include "hortusfox.fullname" . }}-db-headless
+  replicas: 1
+  selector:
+    matchLabels:
+      {{- include "hortusfox.selectorLabels" . | nindent 6 }}
+      app.kubernetes.io/component: db
+  template:
+    metadata:
+      labels:
+        {{- include "hortusfox.selectorLabels" . | nindent 8 }}
+        app.kubernetes.io/component: db
+    spec:
+      containers:
+        - name: {{ .Chart.Name }}-db
+          image: "{{ .Values.db.image.repository }}:{{ .Values.db.image.tag }}"
+          imagePullPolicy: {{ .Values.db.image.pullPolicy }}
+          ports:
+            - name: mysql
+              containerPort: 3306
+              protocol: TCP
+          env:
+            - name: MARIADB_DATABASE
+              value: {{ .Values.config.dbName | quote }}
+            - name: MARIADB_USER
+              value: {{ .Values.config.dbUser | quote }}
+            - name: MARIADB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "hortusfox.fullname" . }}
+                  key: MARIADB_PASSWORD
+            - name: MARIADB_ROOT_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "hortusfox.fullname" . }}
+                  key: MARIADB_ROOT_PASSWORD
+          volumeMounts:
+            - name: db-data
+              mountPath: /var/lib/mysql
+  {{- if .Values.db.persistence.enabled }}
+  volumeClaimTemplates:
+    - metadata:
+        name: db-data
+      spec:
+        accessModes: [ "ReadWriteOnce" ]
+        {{- if .Values.db.persistence.storageClassName }}
+        storageClassName: {{ .Values.db.persistence.storageClassName }}
+        {{- end }}
+        resources:
+          requests:
+            storage: {{ .Values.db.persistence.size }}
+  {{- end }}

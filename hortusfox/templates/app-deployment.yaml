@@ -1,0 +1,77 @@
+# hortusfox/templates/app-deployment.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "hortusfox.fullname" . }}-app
+  labels:
+    {{- include "hortusfox.labels" . | nindent 4 }}
+    app.kubernetes.io/component: app
+spec:
+  replicas: {{ .Values.replicaCount }}
+  selector:
+    matchLabels:
+      {{- include "hortusfox.selectorLabels" . | nindent 6 }}
+      app.kubernetes.io/component: app
+  template:
+    metadata:
+      labels:
+        {{- include "hortusfox.selectorLabels" . | nindent 8 }}
+        app.kubernetes.io/component: app
+    spec:
+      containers:
+        - name: {{ .Chart.Name }}-app
+          image: "{{ .Values.app.image.repository }}:{{ .Values.app.image.tag }}"
+          imagePullPolicy: {{ .Values.app.image.pullPolicy }}
+          ports:
+            - name: http
+              containerPort: 80
+              protocol: TCP
+          env:
+            - name: APP_ADMIN_EMAIL
+              value: {{ .Values.config.adminEmail | quote }}
+            - name: APP_TIMEZONE
+              value: {{ .Values.config.timezone | quote }}
+            - name: DB_HOST
+              value: {{ include "hortusfox.fullname" . }}-db
+            - name: DB_PORT
+              value: "3306"
+            - name: DB_DATABASE
+              value: {{ .Values.config.dbName | quote }}
+            - name: DB_USERNAME
+              value: {{ .Values.config.dbUser | quote }}
+            - name: DB_CHARSET
+              value: {{ .Values.config.dbCharset | quote }}
+            - name: APP_ADMIN_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "hortusfox.fullname" . }}
+                  key: APP_ADMIN_PASSWORD
+            - name: DB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "hortusfox.fullname" . }}
+                  key: MARIADB_PASSWORD
+          volumeMounts:
+            {{- if .Values.app.persistence.enabled }}
+            - name: app-data
+              mountPath: /var/www/html/public/img
+              subPath: img
+            - name: app-data
+              mountPath: /var/www/html/app/logs
+              subPath: logs
+            - name: app-data
+              mountPath: /var/www/html/public/backup
+              subPath: backup
+            - name: app-data
+              mountPath: /var/www/html/public/themes
+              subPath: themes
+            - name: app-data
+              mountPath: /var/www/html/app/migrations
+              subPath: migrations
+            {{- end }}
+      volumes:
+        {{- if .Values.app.persistence.enabled }}
+        - name: app-data
+          persistentVolumeClaim:
+            claimName: {{ include "hortusfox.fullname" . }}-app-data
+        {{- end }}
