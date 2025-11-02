@@ -1,0 +1,14 @@
+apiVersion: v1
+entries:
+  hortusfox:
+  - apiVersion: v2
+    appVersion: v5.4
+    created: "2025-11-02T19:57:41.022510422Z"
+    description: A Helm chart for HortusFox, a self-hosted plant diary
+    digest: 395891be7cafcb944843a789290db5b33ed327e4673e271accd1fab28a482e4a
+    name: hortusfox
+    type: application
+    urls:
+    - https://github.com/jdamp/hortusfox-helm/releases/download/hortusfox-0.1.0/hortusfox-0.1.0.tgz
+    version: 0.1.0
+generated: "2025-11-02T19:57:41.022516143Z"
